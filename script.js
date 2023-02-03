@@ -1,101 +1,79 @@
-// Quote generator DOM
-const quoteContainer = document.getElementById("quote-container");
-console.log(quoteContainer)
-const quoteText = document.getElementById("quote");
-const authorText = document.getElementById("author");
-const twitterBtn = document.getElementById("twitter");
-const newQuoteBtn = document.getElementById("new-quote");
-const loader = document.getElementById("loader")
+const inputBtns = document.querySelectorAll('button');
+const calculatorDisplay = document.querySelector('h1');
+const clearBtn = document.getElementById('clear-btn');
 
-// Show loader
-function loading() {
-    loader.hidden = false;
-    quoteContainer.hidden = true;
-}
-//hide loading
-function complete() {
-    if (!loader.hidden) {
-        quoteContainer.hidden = false;
-        loader.hidden = true;
-    }
+let firstValue = 0;
+let operatorValue = '';
+let awaitingNextValue = false;
+
+function sendNumberValue(number) {
+  // Replace current display value if first value is entered
+  if (awaitingNextValue) {
+    calculatorDisplay.textContent = number;
+    awaitingNextValue = false;
+  } else {
+    // If current display value is 0, replace it, if not add number to display value
+    const displayValue = calculatorDisplay.textContent;
+    calculatorDisplay.textContent = displayValue === '0' ? number : displayValue + number;
+  }
 }
 
-// Quote generator****
-
-let apiQuotes = [];
-
-// to show new quote
-function newQuote(){
-    //to make it pick random quotte
-    const quote = apiQuotes[Math.floor(Math.random() * apiQuotes.length)];
-    // assign value from Dom
-    authorText.textContent = quote.author;
-    quoteText.textContent = quote.text
-
-    // check if author field is blank and replace with 'Unknown'
-    if (!quote.author) {
-        authorText.textContent = "Unknown"
-    }
-    else{
-        quoteText.textContent = quote.text 
-    }
-
-    // Check quote lenght to determine styling
-    if (quote.text.lenght > 50){
-        quoteText.classList.add("long-quote");
-        } else {
-            quoteText.classList.remove("long-quote")
-        }
-        quoteText.textContent = quote.text;
-    // Stop Loader, Show Quote
-    complete();
-    }   
-
-// Get quotes from API using Async Fetch
-async function getQuotes() {
-    loading();
-    const apiUrl = "https://type.fit/api/quotes"
-    try{
-        const response = await fetch (apiUrl);
-        apiQuotes = await response.json();
-        newQuote();
-    } catch (error) {
-        // to get errors
-        console.log("whoops, no quote available", error)
-    }
+function addDecimal() {
+  // If operator pressed, don't add decimal
+  if (awaitingNextValue) return;
+  // If no decimal, add one
+  if (!calculatorDisplay.textContent.includes('.')) {
+    calculatorDisplay.textContent = `${calculatorDisplay.textContent}.`;
+  }
 }
 
-// Tweet Quote
-function tweetQuote() {
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${quoteText.textContent} - ${authorText.textContent}`
-    window.open(twitterUrl, '_blank')
+// Calculate first and second values depending on operator
+const calculate = {
+  '/': (firstNumber, secondNumber) => firstNumber / secondNumber,
+  '*': (firstNumber, secondNumber) => firstNumber * secondNumber,
+  '+': (firstNumber, secondNumber) => firstNumber + secondNumber,
+  '-': (firstNumber, secondNumber) => firstNumber - secondNumber,
+  '=': (firstNumber, secondNumber) => secondNumber,
+};
+
+function useOperator(operator) {
+  const currentValue = Number(calculatorDisplay.textContent);
+  // Prevent multiple operators
+  if (operatorValue && awaitingNextValue) {
+    operatorValue = operator;
+    return;
+  }
+  // Assign firstValue if no value
+  if (!firstValue) {
+    firstValue = currentValue;
+  } else {
+    const calculation = calculate[operatorValue](firstValue, currentValue);
+    calculatorDisplay.textContent = calculation;
+    firstValue = calculation;
+  }
+  // Ready for next value, store operator
+  awaitingNextValue = true;
+  operatorValue = operator;
 }
 
-// event listner
-newQuoteBtn.addEventListener('click', newQuote);
-twitterBtn.addEventListener('click', tweetQuote);
+// Add Event Listeners for numbers, operators, decimal
+inputBtns.forEach((inputBtn) => {
+  if (inputBtn.classList.length === 0) {
+    inputBtn.addEventListener('click', () => sendNumberValue(inputBtn.value));
+  } else if (inputBtn.classList.contains('operator')) {
+    inputBtn.addEventListener('click', () => useOperator(inputBtn.value));
+  } else if (inputBtn.classList.contains('decimal')) {
+    inputBtn.addEventListener('click', () => addDecimal());
+  }
+});
 
+// Reset all values, display
+function resetAll() {
+  firstValue = 0;
+  operatorValue = '';
+  awaitingNextValue = false;
+  calculatorDisplay.textContent = '0';
+}
 
-
-
-
-
-
-
-// while the browser loads
-getQuotes()
-
-
-
-
-// To access from local storage, (comment out the above)
-
-// function newQuote(){
-//     //to make it pick random quotte
-//     const quote = localQuotes[Math.floor(Math.random() * localQuotes.length)];
-//     console.log(quote);
-// }
-
-
-// //on load
-// newQuote()
+// Event Listener
+clearBtn.addEventListener('click', resetAll);
