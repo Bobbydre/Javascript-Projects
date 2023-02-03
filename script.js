@@ -1,101 +1,59 @@
-// Quote generator DOM
-const quoteContainer = document.getElementById("quote-container");
-console.log(quoteContainer)
-const quoteText = document.getElementById("quote");
-const authorText = document.getElementById("author");
-const twitterBtn = document.getElementById("twitter");
-const newQuoteBtn = document.getElementById("new-quote");
-const loader = document.getElementById("loader")
+const toggleSwitch = document.querySelector('input[type="checkbox"]');
+const nav = document.getElementById('nav');
+const toggleIcon = document.getElementById('toggle-icon');
+const image1 = document.getElementById('image1');
+const image2 = document.getElementById('image2');
+const image3 = document.getElementById('image3');
+const textBox = document.getElementById('text-box');
 
-// Show loader
-function loading() {
-    loader.hidden = false;
-    quoteContainer.hidden = true;
-}
-//hide loading
-function complete() {
-    if (!loader.hidden) {
-        quoteContainer.hidden = false;
-        loader.hidden = true;
-    }
+// Dark or Light Images
+function imageMode(color) {
+  image1.src = `img/undraw_proud_coder_${color}.svg`;
+  image2.src = `img/undraw_feeling_proud_${color}.svg`;
+  image3.src = `img/undraw_conceptual_idea_${color}.svg`;
 }
 
-// Quote generator****
-
-let apiQuotes = [];
-
-// to show new quote
-function newQuote(){
-    //to make it pick random quotte
-    const quote = apiQuotes[Math.floor(Math.random() * apiQuotes.length)];
-    // assign value from Dom
-    authorText.textContent = quote.author;
-    quoteText.textContent = quote.text
-
-    // check if author field is blank and replace with 'Unknown'
-    if (!quote.author) {
-        authorText.textContent = "Unknown"
-    }
-    else{
-        quoteText.textContent = quote.text 
-    }
-
-    // Check quote lenght to determine styling
-    if (quote.text.lenght > 50){
-        quoteText.classList.add("long-quote");
-        } else {
-            quoteText.classList.remove("long-quote")
-        }
-        quoteText.textContent = quote.text;
-    // Stop Loader, Show Quote
-    complete();
-    }   
-
-// Get quotes from API using Async Fetch
-async function getQuotes() {
-    loading();
-    const apiUrl = "https://type.fit/api/quotes"
-    try{
-        const response = await fetch (apiUrl);
-        apiQuotes = await response.json();
-        newQuote();
-    } catch (error) {
-        // to get errors
-        console.log("whoops, no quote available", error)
-    }
+// Dark Mode Styles
+function darkMode() {
+  nav.style.backgroundColor = 'rgb(0 0 0 / 50%)';
+  textBox.style.backgroundColor = 'rgb(255 255 255 / 50%)';
+  toggleIcon.children[0].textContent = 'Dark Mode';
+  toggleIcon.children[1].classList.replace('fa-sun', 'fa-moon');
+  imageMode('dark');
 }
 
-// Tweet Quote
-function tweetQuote() {
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${quoteText.textContent} - ${authorText.textContent}`
-    window.open(twitterUrl, '_blank')
+// Light Mode Styles
+function lightMode() {
+  nav.style.backgroundColor = 'rgb(255 255 255 / 50%)';
+  textBox.style.backgroundColor = 'rgb(0 0 0 / 50%)';
+  toggleIcon.children[0].textContent = 'Light Mode';
+  toggleIcon.children[1].classList.replace('fa-moon', 'fa-sun');
+  imageMode('light');
 }
 
-// event listner
-newQuoteBtn.addEventListener('click', newQuote);
-twitterBtn.addEventListener('click', tweetQuote);
+// Switch Theme Dynamically
+function switchTheme(event) {
+  if (event.target.checked) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    localStorage.setItem('theme', 'dark');
+    darkMode();
+  } else {
+    document.documentElement.setAttribute('data-theme', 'light');
+    localStorage.setItem('theme', 'light');
+    lightMode();
+  }
+}
 
+// Event Listener
+toggleSwitch.addEventListener('change', switchTheme);
 
+// Check Local Storage For Theme
+const currentTheme = localStorage.getItem('theme');
+if (currentTheme) {
+  document.documentElement.setAttribute('data-theme', currentTheme);
 
-
-
-
-
-
-// while the browser loads
-getQuotes()
-
-
-
-
-// To access from local storage, (comment out the above)
-
-// function newQuote(){
-//     //to make it pick random quotte
-//     const quote = localQuotes[Math.floor(Math.random() * localQuotes.length)];
-//     console.log(quote);
-// }
-
-
-// //on load
-// newQuote()
+  if (currentTheme === 'dark') {
+    toggleSwitch.checked = true;
+    darkMode();
+  }
+}
