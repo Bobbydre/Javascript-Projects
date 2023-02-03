@@ -1,101 +1,77 @@
-// Quote generator DOM
-const quoteContainer = document.getElementById("quote-container");
-console.log(quoteContainer)
-const quoteText = document.getElementById("quote");
-const authorText = document.getElementById("author");
-const twitterBtn = document.getElementById("twitter");
-const newQuoteBtn = document.getElementById("new-quote");
-const loader = document.getElementById("loader")
+const imageContainer = document.getElementById('image-container');
+const loader = document.getElementById('loader');
 
-// Show loader
-function loading() {
-    loader.hidden = false;
-    quoteContainer.hidden = true;
-}
-//hide loading
-function complete() {
-    if (!loader.hidden) {
-        quoteContainer.hidden = false;
-        loader.hidden = true;
-    }
-}
+let ready = false;
+let imagesLoaded = 0;
+let totalImages = 0;
+let photosArray = [];
 
-// Quote generator****
+// Unsplash API
+const count = 30;
+const apiKey = 'GQBj1ROMaO-l8KK-20bZh3RsWMJVZwLYcWzXwjUwUac';
+const apiUrl = `https://api.unsplash.com/photos/random?client_id=${apiKey}&count=${count}`;
 
-let apiQuotes = [];
-
-// to show new quote
-function newQuote(){
-    //to make it pick random quotte
-    const quote = apiQuotes[Math.floor(Math.random() * apiQuotes.length)];
-    // assign value from Dom
-    authorText.textContent = quote.author;
-    quoteText.textContent = quote.text
-
-    // check if author field is blank and replace with 'Unknown'
-    if (!quote.author) {
-        authorText.textContent = "Unknown"
-    }
-    else{
-        quoteText.textContent = quote.text 
-    }
-
-    // Check quote lenght to determine styling
-    if (quote.text.lenght > 50){
-        quoteText.classList.add("long-quote");
-        } else {
-            quoteText.classList.remove("long-quote")
-        }
-        quoteText.textContent = quote.text;
-    // Stop Loader, Show Quote
-    complete();
-    }   
-
-// Get quotes from API using Async Fetch
-async function getQuotes() {
-    loading();
-    const apiUrl = "https://type.fit/api/quotes"
-    try{
-        const response = await fetch (apiUrl);
-        apiQuotes = await response.json();
-        newQuote();
-    } catch (error) {
-        // to get errors
-        console.log("whoops, no quote available", error)
-    }
+// Check if all images were loaded
+function imageLoaded() {
+  imagesLoaded++;
+  if (imagesLoaded === totalImages) {
+    ready = true;
+    loader.hidden = true;
+  }
 }
 
-// Tweet Quote
-function tweetQuote() {
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${quoteText.textContent} - ${authorText.textContent}`
-    window.open(twitterUrl, '_blank')
+// Function to Set Attributes on DOM Elements
+function setAttributes(element, attributes) {
+  for (const key in attributes) {
+    element.setAttribute(key, attributes[key]);
+  }
 }
 
-// event listner
-newQuoteBtn.addEventListener('click', newQuote);
-twitterBtn.addEventListener('click', tweetQuote);
+// Create Elements For Links & Photos and Add to DOM
+function displayPhotos() {
+  imagesLoaded = 0;
+  totalImages = photosArray.length;
+  // Run function for each object in photosArray
+  photosArray.forEach((photo) => {
+    // Create <a> to link to full photo
+    const item = document.createElement('a');
+    setAttributes(item, {
+      href: photo.links.html,
+      target: '_blank',
+    });
+    // Create <img> for photo
+    const img = document.createElement('img');
+    setAttributes(img, {
+      src: photo.urls.regular,
+      alt: photo.alt_description,
+      title: photo.alt_description,
+    });
+    // Event Listener, check when each is finished loading
+    img.addEventListener('load', imageLoaded);
+    // Put <img> inside <a>, then put both inside imageContainer Element
+    item.appendChild(img);
+    imageContainer.appendChild(item);
+  });
+}
 
+// Get photos from Unsplash API
+async function getPhotos() {
+  try {
+    const response = await fetch(apiUrl);
+    photosArray = await response.json();
+    displayPhotos();
+  } catch (error) {
+    // Catch Error Here
+  }
+}
 
+// Check to see if scrolling near bottom of page and Load More Photos
+window.addEventListener('scroll', () => {
+  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 1000 && ready) {
+    ready = false;
+    getPhotos();
+  }
+});
 
-
-
-
-
-
-// while the browser loads
-getQuotes()
-
-
-
-
-// To access from local storage, (comment out the above)
-
-// function newQuote(){
-//     //to make it pick random quotte
-//     const quote = localQuotes[Math.floor(Math.random() * localQuotes.length)];
-//     console.log(quote);
-// }
-
-
-// //on load
-// newQuote()
+// On Page Load
+getPhotos();
