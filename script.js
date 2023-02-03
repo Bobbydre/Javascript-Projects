@@ -1,101 +1,133 @@
-// Quote generator DOM
-const quoteContainer = document.getElementById("quote-container");
-console.log(quoteContainer)
-const quoteText = document.getElementById("quote");
-const authorText = document.getElementById("author");
-const twitterBtn = document.getElementById("twitter");
-const newQuoteBtn = document.getElementById("new-quote");
-const loader = document.getElementById("loader")
+const image = document.querySelector('img');
+const title = document.getElementById('title');
+const artist = document.getElementById('artist');
+const music = document.querySelector('audio');
+const currentTimeEl = document.getElementById('current-time');
+const durationEl = document.getElementById('duration');
+const progress = document.getElementById('progress');
+const progressContainer = document.getElementById('progress-container');
+const prevBtn = document.getElementById('prev');
+const playBtn = document.getElementById('play');
+const nextBtn = document.getElementById('next');
 
-// Show loader
-function loading() {
-    loader.hidden = false;
-    quoteContainer.hidden = true;
-}
-//hide loading
-function complete() {
-    if (!loader.hidden) {
-        quoteContainer.hidden = false;
-        loader.hidden = true;
-    }
-}
+// Music
+const songs = [
+  {
+    name: 'jacinto-1',
+    displayName: 'Electric Chill Machine',
+    artist: 'Jacinto Design',
+  },
+  {
+    name: 'jacinto-2',
+    displayName: 'Seven Nation Army (Remix)',
+    artist: 'Jacinto Design',
+  },
+  {
+    name: 'jacinto-3',
+    displayName: 'Goodnight, Disco Queen',
+    artist: 'Jacinto Design',
+  },
+  {
+    name: 'metric-1',
+    displayName: 'Front Row (Remix)',
+    artist: 'Metric/Jacinto Design',
+  },
+];
 
-// Quote generator****
+// Check if Playing
+let isPlaying = false;
 
-let apiQuotes = [];
-
-// to show new quote
-function newQuote(){
-    //to make it pick random quotte
-    const quote = apiQuotes[Math.floor(Math.random() * apiQuotes.length)];
-    // assign value from Dom
-    authorText.textContent = quote.author;
-    quoteText.textContent = quote.text
-
-    // check if author field is blank and replace with 'Unknown'
-    if (!quote.author) {
-        authorText.textContent = "Unknown"
-    }
-    else{
-        quoteText.textContent = quote.text 
-    }
-
-    // Check quote lenght to determine styling
-    if (quote.text.lenght > 50){
-        quoteText.classList.add("long-quote");
-        } else {
-            quoteText.classList.remove("long-quote")
-        }
-        quoteText.textContent = quote.text;
-    // Stop Loader, Show Quote
-    complete();
-    }   
-
-// Get quotes from API using Async Fetch
-async function getQuotes() {
-    loading();
-    const apiUrl = "https://type.fit/api/quotes"
-    try{
-        const response = await fetch (apiUrl);
-        apiQuotes = await response.json();
-        newQuote();
-    } catch (error) {
-        // to get errors
-        console.log("whoops, no quote available", error)
-    }
+// Play
+function playSong() {
+  isPlaying = true;
+  playBtn.classList.replace('fa-play', 'fa-pause');
+  playBtn.setAttribute('title', 'Pause');
+  music.play();
 }
 
-// Tweet Quote
-function tweetQuote() {
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${quoteText.textContent} - ${authorText.textContent}`
-    window.open(twitterUrl, '_blank')
+// Pause
+function pauseSong() {
+  isPlaying = false;
+  playBtn.classList.replace('fa-pause', 'fa-play');
+  playBtn.setAttribute('title', 'Play');
+  music.pause();
 }
 
-// event listner
-newQuoteBtn.addEventListener('click', newQuote);
-twitterBtn.addEventListener('click', tweetQuote);
+// Play or Pause Event Listener
+playBtn.addEventListener('click', () => (isPlaying ? pauseSong() : playSong()));
 
+// Update DOM
+function loadSong(song) {
+  title.textContent = song.displayName;
+  artist.textContent = song.artist;
+  music.src = `music/${song.name}.mp3`;
+  image.src = `img/${song.name}.jpg`;
+}
 
+// Current Song
+let songIndex = 0;
 
+// Previous Song
+function prevSong() {
+  songIndex--;
+  if (songIndex < 0) {
+    songIndex = songs.length - 1;
+  }
+  loadSong(songs[songIndex]);
+  playSong();
+}
 
+// Next Song
+function nextSong() {
+  songIndex++;
+  if (songIndex > songs.length - 1) {
+    songIndex = 0;
+  }
+  loadSong(songs[songIndex]);
+  playSong();
+}
 
+// On Load, this will Select First Song
+loadSong(songs[songIndex]);
 
+// Update Progress Bar & Time
+function updateProgressBar(e) {
+  if (isPlaying) {
+    const { duration, currentTime } = e.srcElement;
+    // Update progress bar width
+    const progressPercent = (currentTime / duration) * 100;
+    progress.style.width = `${progressPercent}%`;
+    // Calculate display for duration
+    const durationMinutes = Math.floor(duration / 60);
+    let durationSeconds = Math.floor(duration % 60);
+    if (durationSeconds < 10) {
+      durationSeconds = `0${durationSeconds}`;
+    }
+    // Delay switching duration Element to avoid NaN
+    if (durationSeconds) {
+      durationEl.textContent = `${durationMinutes}:${durationSeconds}`;
+    }
+    // Calculate display for currentTime
+    const currentMinutes = Math.floor(currentTime / 60);
+    let currentSeconds = Math.floor(currentTime % 60);
+    if (currentSeconds < 10) {
+      currentSeconds = `0${currentSeconds}`;
+    }
+    currentTimeEl.textContent = `${currentMinutes}:${currentSeconds}`;
+  }
+}
 
+// Set Progress Bar
+function setProgressBar(e) {
+  const width = this.clientWidth;
+  const clickX = e.offsetX;
+  const { duration } = music;
+  music.currentTime = (clickX / width) * duration;
+}
 
-// while the browser loads
-getQuotes()
-
-
-
-
-// To access from local storage, (comment out the above)
-
-// function newQuote(){
-//     //to make it pick random quotte
-//     const quote = localQuotes[Math.floor(Math.random() * localQuotes.length)];
-//     console.log(quote);
-// }
-
-
-// //on load
-// newQuote()
+// Event Listeners
+prevBtn.addEventListener('click', prevSong);
+nextBtn.addEventListener('click', nextSong);
+music.addEventListener('ended', nextSong);
+music.addEventListener('timeupdate', updateProgressBar);
+progressContainer.addEventListener('click', setProgressBar);
