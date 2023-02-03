@@ -1,101 +1,69 @@
-// Quote generator DOM
-const quoteContainer = document.getElementById("quote-container");
-console.log(quoteContainer)
-const quoteText = document.getElementById("quote");
-const authorText = document.getElementById("author");
-const twitterBtn = document.getElementById("twitter");
-const newQuoteBtn = document.getElementById("new-quote");
-const loader = document.getElementById("loader")
+const form = document.getElementById('form');
+const password1El = document.getElementById('password1');
+const password2El = document.getElementById('password2');
+const messageContainer = document.querySelector('.message-container');
+const message = document.getElementById('message');
 
-// Show loader
-function loading() {
-    loader.hidden = false;
-    quoteContainer.hidden = true;
-}
-//hide loading
-function complete() {
-    if (!loader.hidden) {
-        quoteContainer.hidden = false;
-        loader.hidden = true;
-    }
-}
+let isValid = false;
+let passwordsMatch = false;
 
-// Quote generator****
-
-let apiQuotes = [];
-
-// to show new quote
-function newQuote(){
-    //to make it pick random quotte
-    const quote = apiQuotes[Math.floor(Math.random() * apiQuotes.length)];
-    // assign value from Dom
-    authorText.textContent = quote.author;
-    quoteText.textContent = quote.text
-
-    // check if author field is blank and replace with 'Unknown'
-    if (!quote.author) {
-        authorText.textContent = "Unknown"
-    }
-    else{
-        quoteText.textContent = quote.text 
-    }
-
-    // Check quote lenght to determine styling
-    if (quote.text.lenght > 50){
-        quoteText.classList.add("long-quote");
-        } else {
-            quoteText.classList.remove("long-quote")
-        }
-        quoteText.textContent = quote.text;
-    // Stop Loader, Show Quote
-    complete();
-    }   
-
-// Get quotes from API using Async Fetch
-async function getQuotes() {
-    loading();
-    const apiUrl = "https://type.fit/api/quotes"
-    try{
-        const response = await fetch (apiUrl);
-        apiQuotes = await response.json();
-        newQuote();
-    } catch (error) {
-        // to get errors
-        console.log("whoops, no quote available", error)
-    }
+function validateForm() {
+  // Use HTML constraint API to check form validity
+  isValid = form.checkValidity();
+  // If the form isn't valid
+  if (!isValid) {
+    // Style main message for an error
+    message.textContent = 'Please fill out all fields.';
+    message.style.color = 'red';
+    messageContainer.style.borderColor = 'red';
+    return;
+  }
+  // Check to see if both password fields match
+  if (password1El.value === password2El.value) {
+    // If they match, set value to true and borders to green
+    passwordsMatch = true;
+    password1El.style.borderColor = 'green';
+    password2El.style.borderColor = 'green';
+  } else {
+    // If they don't match, border color of input to red and also change message
+    passwordsMatch = false;
+    message.textContent = 'Make sure passwords match.';
+    message.style.color = 'red';
+    messageContainer.style.borderColor = 'red';
+    password1El.style.borderColor = 'red';
+    password2El.style.borderColor = 'red';
+    return;
+  }
+  // If form is valid and passwords match
+  if (isValid && passwordsMatch) {
+    // Style main message for success
+    message.textContent = 'Successfully Registered!';
+    message.style.color = 'green';
+    messageContainer.style.borderColor = 'green';
+  }
 }
 
-// Tweet Quote
-function tweetQuote() {
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${quoteText.textContent} - ${authorText.textContent}`
-    window.open(twitterUrl, '_blank')
+function storeFormData() {
+  const user = {
+    name: form.name.value,
+    phone: form.phone.value,
+    email: form.email.value,
+    website: form.website.value,
+    password: form.password.value,
+  };
+  // Do something with user data
+  console.log(user);
 }
 
-// event listner
-newQuoteBtn.addEventListener('click', newQuote);
-twitterBtn.addEventListener('click', tweetQuote);
+function processFormData(e) {
+  e.preventDefault();
+  // Validate Form
+  validateForm();
+  // Submit Form if Valid
+  if (isValid && passwordsMatch) {
+    storeFormData();
+  }
+}
 
-
-
-
-
-
-
-
-// while the browser loads
-getQuotes()
-
-
-
-
-// To access from local storage, (comment out the above)
-
-// function newQuote(){
-//     //to make it pick random quotte
-//     const quote = localQuotes[Math.floor(Math.random() * localQuotes.length)];
-//     console.log(quote);
-// }
-
-
-// //on load
-// newQuote()
+// Event Listener
+form.addEventListener('submit', processFormData);
